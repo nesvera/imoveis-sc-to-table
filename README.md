@@ -35,6 +35,6 @@ python3 imoveis_sc_crawler.py
 ```
 
 9. Abra o arquivo ``imoveis.xlsx ``
-10. Você pode marcar as colunas ``changed``, ``viewed``, ``disliked`` e ``deleted`` com ``x```
+10. Você pode marcar as colunas ``changed``, ``viewed``, ``disliked`` e ``deleted`` com ``x``
 11. Salve o arquivo quando finalizar
 12. Você pode executar o script do passo 5 quantas vezes quiser para atualizar a tabela com dados novos do site
