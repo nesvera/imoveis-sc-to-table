@@ -413,7 +413,7 @@ class ImoveisScTable:
             if self.compare_items(item_site, item_table):
                 continue
 
-            end_items_hash_table[index_site] = item_site
+            end_items_hash_table[index_site] = item_table
             site_items_keys.remove(index_site)
             table_items_keys.remove(index_site)
 
