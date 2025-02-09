@@ -2,11 +2,13 @@
 
 import requests
 from bs4 import BeautifulSoup, element
-from typing import Optional, List
+from typing import Optional, List, Dict
 import time
 import re
+import pandas as pd
 
 url = "https://www.imoveis-sc.com.br/blumenau/comprar/apartamento/agua-verde_boa-vista_bom-retiro_centro_itoupava-seca_jardim-blumenau_ponta-aguda_ribeirao-fresco_velha_victor-konder_vila-formosa_vila-nova/quartos/2?ordenacao=menor-preco&valor=300000-450000&area=49-&suites=1"
+
 
 class ImovelInfo:
     code = ""
@@ -17,7 +19,7 @@ class ImovelInfo:
     summary = ""
     url = ""
     bedrooms = ""
-    suite = "",
+    suite = ("",)
     garage_slots = ""
     space = ""
     value = ""
@@ -65,6 +67,75 @@ class ImovelInfo:
     def __str__(self) -> str:
         return f"code: {self.code}, model: {self.model}, real_state: {self.real_state}, neighborhood: {self.neighborhood}, city: {self.city}, summary: {self.summary}, url: {self.url}, bedrooms: {self.bedrooms}, suite: {self.suite}, garage_slots: {self.garage_slots}, space: {self.space}, price: {self.price}, changed: {self.changed}, viewed: {self.viewed}, disliked: {self.disliked}, deleted: {self.deleted}"
 
+    def table_serializer(self) -> str:
+        dict_s = self.__dict__
+
+        if dict_s.get("changed"):
+            dict_s["changed"] = "x"
+        else:
+            dict_s["changed"] = ""
+
+        if dict_s.get("viewed"):
+            dict_s["viewed"] = "x"
+        else:
+            dict_s["viewed"] = ""
+
+        if dict_s.get("disliked"):
+            dict_s["disliked"] = "x"
+        else:
+            dict_s["disliked"] = ""
+
+        if dict_s.get("deleted"):
+            dict_s["deleted"] = "x"
+        else:
+            dict_s["deleted"] = ""
+
+        return dict_s
+
+    @classmethod
+    def table_deserializer(cls, dict_s: Dict = None):
+        if dict_s is None:
+            return
+
+        if dict_s.get("changed") == "x":
+            dict_s["changed"] = True
+        else:
+            dict_s["changed"] = False
+
+        if dict_s.get("viewed") == "x":
+            dict_s["viewed"] = True
+        else:
+            dict_s["viewed"] = False
+
+        if dict_s.get("disliked") == "x":
+            dict_s["disliked"] = True
+        else:
+            dict_s["disliked"] = False
+
+        if dict_s.get("deleted") == "x":
+            dict_s["deleted"] = True
+        else:
+            dict_s["deleted"] = False
+
+        return cls(
+            code=dict_s.get("code"),
+            model=dict_s.get("model"),
+            real_state=dict_s.get("real_state"),
+            neighborhood=dict_s.get("neighborhood"),
+            city=dict_s.get("city"),
+            summary=dict_s.get("summary"),
+            url=dict_s.get("url"),
+            bedrooms=dict_s.get("bedrooms"),
+            suite=dict_s.get("suite"),
+            garage_slots=dict_s.get("garage_slots"),
+            space=dict_s.get("space"),
+            price=dict_s.get("price"),
+            changed=dict_s.get("changed"),
+            viewed=dict_s.get("viewed"),
+            disliked=dict_s.get("disliked"),
+            deleted=dict_s.get("deleted"),
+        )
+
 
 class ImoveisSC:
     def __init__(self, url: str = ""):
@@ -83,7 +154,7 @@ class ImoveisSC:
         self.session = requests.session()
 
     def crawl(self) -> List:
-        page_count = 1
+        page_count = 0
         page_last = -1
 
         imoveis_list = []
@@ -104,12 +175,7 @@ class ImoveisSC:
             page_count += 1
             time.sleep(0.3)
 
-
-        for im in imoveis_list:
-            print(im.code)
-
-        print("Len: ", len(imoveis_list))
-
+        return imoveis_list
 
     def get_last_page_number(self, page: str = "") -> str:
         soup = BeautifulSoup(page, "html.parser")
@@ -125,7 +191,7 @@ class ImoveisSC:
         else:
             return 20
 
-    def make_request(self, page: int =  0) -> Optional[str]:
+    def make_request(self, page: int = 0) -> Optional[str]:
 
         url = self.url
         if page > 0:
@@ -172,7 +238,7 @@ class ImoveisSC:
                 suite=suite,
                 garage_slots=garage_slots,
                 space=space,
-                price=price
+                price=price,
             )
 
             imoveis_list.append(imovel_info)
@@ -288,20 +354,103 @@ class ImoveisSC:
         return price
 
 
-class ImovelTable:
-    def __init__(self):
-        pass
+class ImoveisScTable:
+    filepath = "imoveis.xlsx"
 
-    def load_file():
-        pass
+    def __init__(self, filepath: str = ""):
+        if len(filepath) > 0:
+            filepath = filepath
 
-    def update_file():
-        pass
+    def load_file(self):
+        try:
+            df_existing = pd.read_excel(self.filepath, engine="openpyxl")
+        except:
+            return []
 
-    def write_file():
-        pass
+        imovel_items = []
+        for _, row in df_existing.iterrows():
+            row_dict = row.to_dict()
+            item = ImovelInfo.table_deserializer(row_dict)
+            imovel_items.append(item)
+
+        return imovel_items
+
+    def create_index_dict(self, items: List[ImovelInfo] = None):
+        if items is None:
+            return False
+
+        item_dict = {}
+
+        for item in items:
+            index = item.code
+            item_dict[index] = item
+
+        return item_dict
+
+    def update_file(self, items: List[ImovelInfo] = None):
+        if items is None:
+            return False
+
+        table_items = self.load_file()
+
+        site_items_hash_table = self.create_index_dict(items)
+        site_items_keys = list(site_items_hash_table.keys())
+        table_items_hash_table = self.create_index_dict(table_items)
+        table_items_keys = list(table_items_hash_table.keys())
+
+        end_items_hash_table = {}
+
+        for index_site, item_site in site_items_hash_table.items():
+            item_table = table_items_hash_table.get(index_site, None)
+
+            # new item
+            if item_table is None:
+                end_items_hash_table[index_site] = item_site
+                site_items_keys.remove(index_site)
+                continue
+
+            # item changed
+            if self.compare_items(item_site, item_table):
+                continue
+
+            end_items_hash_table[index_site] = item_site
+            site_items_keys.remove(index_site)
+            table_items_keys.remove(index_site)
+
+        # skip set deleting if file does not exist
+        if len(table_items) > 0:
+            for remaining_item_key in table_items_keys:
+                item = table_items_hash_table.get(remaining_item_key, None)
+                if item is None:
+                    continue
+
+                item.deleted = True
+                end_items_hash_table[remaining_item_key] = item
+
+        end_items = []
+        for _, item in end_items_hash_table.items():
+            end_items.append(item)
+
+        self.write_file(end_items)
+
+    def compare_items(self, new, old):
+        return False
+
+    def write_file(self, items: List[ImovelInfo] = None):
+        if items is None:
+            return False
+
+        table_lines = []
+        for item in items:
+            table_lines.append(item.table_serializer())
+
+        df_new = pd.DataFrame(table_lines)
+        df_new.to_excel(self.filepath, index=False, engine="openpyxl")
 
 
 if __name__ == "__main__":
     site = ImoveisSC(url)
     site_items = site.crawl()
+
+    imovel_table = ImoveisScTable()
+    imovel_table.update_file(site_items)
