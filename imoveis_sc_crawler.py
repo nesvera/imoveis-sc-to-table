@@ -7,7 +7,7 @@ import time
 import re
 import pandas as pd
 
-url = "https://www.imoveis-sc.com.br/blumenau/comprar/apartamento/agua-verde_boa-vista_bom-retiro_centro_itoupava-seca_jardim-blumenau_ponta-aguda_ribeirao-fresco_velha_victor-konder_vila-formosa_vila-nova/quartos/2?ordenacao=menor-preco&valor=300000-450000&area=49-&suites=1"
+url = "https://www.imoveis-sc.com.br/blumenau/comprar/apartamento/agua-verde_boa-vista_bom-retiro_centro_itoupava-seca_jardim-blumenau_ponta-aguda_ribeirao-fresco_velha_victor-konder_vila-formosa_vila-nova/quartos/2?ordenacao=menor-preco&valor=300000-500000&area=49-&suites=1"
 
 
 class ImovelInfo:
@@ -27,6 +27,7 @@ class ImovelInfo:
     viewed = False
     disliked = False
     deleted = False
+    comments = ""
 
     def __init__(
         self,
@@ -46,6 +47,7 @@ class ImovelInfo:
         viewed: bool = False,
         disliked: bool = False,
         deleted: bool = False,
+        comments: str = ""
     ):
         self.code = code
         self.model = model
@@ -63,9 +65,10 @@ class ImovelInfo:
         self.viewed = viewed
         self.disliked = disliked
         self.deleted = deleted
+        self.comments = comments
 
     def __str__(self) -> str:
-        return f"code: {self.code}, model: {self.model}, real_state: {self.real_state}, neighborhood: {self.neighborhood}, city: {self.city}, summary: {self.summary}, url: {self.url}, bedrooms: {self.bedrooms}, suite: {self.suite}, garage_slots: {self.garage_slots}, space: {self.space}, price: {self.price}, changed: {self.changed}, viewed: {self.viewed}, disliked: {self.disliked}, deleted: {self.deleted}"
+        return f"code: {self.code}, model: {self.model}, real_state: {self.real_state}, neighborhood: {self.neighborhood}, city: {self.city}, summary: {self.summary}, url: {self.url}, bedrooms: {self.bedrooms}, suite: {self.suite}, garage_slots: {self.garage_slots}, space: {self.space}, price: {self.price}, changed: {self.changed}, viewed: {self.viewed}, disliked: {self.disliked}, deleted: {self.deleted}, comments: {self.comments}"
 
     def table_serializer(self) -> str:
         dict_s = self.__dict__
@@ -134,6 +137,7 @@ class ImovelInfo:
             viewed=dict_s.get("viewed"),
             disliked=dict_s.get("disliked"),
             deleted=dict_s.get("deleted"),
+            comments=dict_s.get("comments")
         )
 
 
@@ -410,7 +414,11 @@ class ImoveisScTable:
                 continue
 
             # item changed
-            if self.compare_items(item_site, item_table):
+            if self.is_different(item_site, item_table):
+                item_site.changed = True
+                end_items_hash_table[index_site] = item_site
+                site_items_keys.remove(index_site)
+                table_items_keys.remove(index_site)
                 continue
 
             end_items_hash_table[index_site] = item_table
@@ -433,8 +441,13 @@ class ImoveisScTable:
 
         self.write_file(end_items)
 
-    def compare_items(self, new, old):
-        return False
+    def is_different(self, new: ImovelInfo = None, old: ImovelInfo = None):
+        if new is None or old is None:
+            return False
+
+        diff = new.price != old.price
+
+        return diff
 
     def write_file(self, items: List[ImovelInfo] = None):
         if items is None:
