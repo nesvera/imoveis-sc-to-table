@@ -1,6 +1,10 @@
 # Descrição
 Ferramenta para exportar anúncios do site Imóveis SC para uma tabela.
 
+Example de tabela gerada.
+
+![Alt text](./doc/table-result.png?raw=true "Table")
+
 
 # Instalação
 
