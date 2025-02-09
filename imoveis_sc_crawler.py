@@ -1,8 +1,15 @@
 #!/bin/env python3
 
 import requests
-from bs4 import BeautifulSoup, element
-from typing import Optional, List, Dict
+from bs4 import (
+    BeautifulSoup,
+    element,
+)
+from typing import (
+    Optional,
+    List,
+    Dict,
+)
 import time
 import re
 import pandas as pd
@@ -47,7 +54,7 @@ class ImovelInfo:
         viewed: bool = False,
         disliked: bool = False,
         deleted: bool = False,
-        comments: str = ""
+        comments: str = "",
     ):
         self.code = code
         self.model = model
@@ -67,10 +74,21 @@ class ImovelInfo:
         self.deleted = deleted
         self.comments = comments
 
-    def __str__(self) -> str:
-        return f"code: {self.code}, model: {self.model}, real_state: {self.real_state}, neighborhood: {self.neighborhood}, city: {self.city}, summary: {self.summary}, url: {self.url}, bedrooms: {self.bedrooms}, suite: {self.suite}, garage_slots: {self.garage_slots}, space: {self.space}, price: {self.price}, changed: {self.changed}, viewed: {self.viewed}, disliked: {self.disliked}, deleted: {self.deleted}, comments: {self.comments}"
+    def __str__(
+        self,
+    ) -> str:
+        info_str = f"code: {self.code}, model: {self.model}, real_state: {self.real_state}, "
+        info_str += f"neighborhood: {self.neighborhood}, city: {self.city}, summary: {self.summary}, "
+        info_str += f"url: {self.url}, bedrooms: {self.bedrooms}, suite: {self.suite}, "
+        info_str += f"garage_slots: {self.garage_slots}, space: {self.space}, price: {self.price}, "
+        info_str += f"changed: {self.changed}, viewed: {self.viewed}, disliked: {self.disliked}, "
+        info_str += f"deleted: {self.deleted}, comments: {self.comments}"
 
-    def table_serializer(self) -> str:
+        return info_str
+
+    def table_serializer(
+        self,
+    ) -> str:
         dict_s = self.__dict__
 
         if dict_s.get("changed"):
@@ -96,7 +114,10 @@ class ImovelInfo:
         return dict_s
 
     @classmethod
-    def table_deserializer(cls, dict_s: Dict = None):
+    def table_deserializer(
+        cls,
+        dict_s: Dict = None,
+    ):
         if dict_s is None:
             return
 
@@ -137,12 +158,15 @@ class ImovelInfo:
             viewed=dict_s.get("viewed"),
             disliked=dict_s.get("disliked"),
             deleted=dict_s.get("deleted"),
-            comments=dict_s.get("comments")
+            comments=dict_s.get("comments"),
         )
 
 
 class ImoveisSC:
-    def __init__(self, url: str = ""):
+    def __init__(
+        self,
+        url: str = "",
+    ):
         self.url = url
         self.headers = {
             "accept": "*/*",
@@ -157,7 +181,9 @@ class ImoveisSC:
 
         self.session = requests.session()
 
-    def crawl(self) -> List:
+    def crawl(
+        self,
+    ) -> List:
         page_count = 0
         page_last = -1
 
@@ -181,11 +207,23 @@ class ImoveisSC:
 
         return imoveis_list
 
-    def get_last_page_number(self, page: str = "") -> str:
-        soup = BeautifulSoup(page, "html.parser")
-        snnipet = soup.find("div", class_="navigation").get_text(strip=True)
+    def get_last_page_number(
+        self,
+        page: str = "",
+    ) -> str:
+        soup = BeautifulSoup(
+            page,
+            "html.parser",
+        )
+        snnipet = soup.find(
+            "div",
+            class_="navigation",
+        ).get_text(strip=True)
 
-        match = re.search(r"de \d+", snnipet)
+        match = re.search(
+            r"de \d+",
+            snnipet,
+        )
 
         if match:
             page_str = match.group()
@@ -195,22 +233,37 @@ class ImoveisSC:
         else:
             return 20
 
-    def make_request(self, page: int = 0) -> Optional[str]:
+    def make_request(
+        self,
+        page: int = 0,
+    ) -> Optional[str]:
 
         url = self.url
         if page > 0:
             url += f"&page={page}"
 
-        response = self.session.get(url, headers=self.headers)
+        response = self.session.get(
+            url,
+            headers=self.headers,
+        )
 
         if response.status_code != 200:
             return None
 
         return response.text
 
-    def extract_info(self, page: str = "") -> List[ImovelInfo]:
-        soup = BeautifulSoup(page, "html.parser")
-        imoveis_soup = soup.find_all("div", class_="imovel-data")
+    def extract_info(
+        self,
+        page: str = "",
+    ) -> List[ImovelInfo]:
+        soup = BeautifulSoup(
+            page,
+            "html.parser",
+        )
+        imoveis_soup = soup.find_all(
+            "div",
+            class_="imovel-data",
+        )
 
         if len(imoveis_soup) == 0:
             return None
@@ -249,33 +302,61 @@ class ImoveisSC:
 
         return imoveis_list
 
-    def get_model(self, snnipet: element.Tag = "") -> str:
+    def get_model(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            model = snnipet.find("meta", itemprop="model").get("content")
+            model = snnipet.find(
+                "meta",
+                itemprop="model",
+            ).get("content")
         except:
             return ""
 
         return model
 
-    def get_code(self, snnipet: element.Tag = "") -> str:
+    def get_code(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            code = snnipet.find("meta", itemprop="sku").get("content")
+            code = snnipet.find(
+                "meta",
+                itemprop="sku",
+            ).get("content")
         except:
             return ""
 
         return code
 
-    def get_real_estate(self, snnipet: element.Tag = "") -> str:
+    def get_real_estate(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            real_estate = snnipet.find("meta", itemprop="brand").get("content")
+            real_estate = snnipet.find(
+                "meta",
+                itemprop="brand",
+            ).get("content")
         except:
             return ""
 
         return real_estate
 
-    def get_neighborhood(self, snnipet: element.Tag = "") -> str:
+    def get_neighborhood(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            neighboor = snnipet.find("div", class_="imovel-extra").find("strong").text
+            neighboor = (
+                snnipet.find(
+                    "div",
+                    class_="imovel-extra",
+                )
+                .find("strong")
+                .text
+            )
             neighboor = neighboor.split(",")[1]
             neighboor = neighboor.strip()
         except:
@@ -283,9 +364,19 @@ class ImoveisSC:
 
         return neighboor
 
-    def get_city(self, snnipet: element.Tag = "") -> str:
+    def get_city(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            city = snnipet.find("div", class_="imovel-extra").find("strong").text
+            city = (
+                snnipet.find(
+                    "div",
+                    class_="imovel-extra",
+                )
+                .find("strong")
+                .text
+            )
             city = city.split(",")[0]
             city = city.strip()
         except:
@@ -293,15 +384,24 @@ class ImoveisSC:
 
         return city
 
-    def get_summary(self, snnipet: element.Tag = "") -> str:
+    def get_summary(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            summary = snnipet.find("meta", itemprop="name").get("content")
+            summary = snnipet.find(
+                "meta",
+                itemprop="name",
+            ).get("content")
         except:
             return ""
 
         return summary
 
-    def get_url(self, snnipet: element.Tag = "") -> str:
+    def get_url(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
             url = snnipet.find("a").get("href")
         except:
@@ -309,49 +409,75 @@ class ImoveisSC:
 
         return url
 
-    def get_bedrooms(self, snnipet: element.Tag = "") -> str:
+    def get_bedrooms(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            beedrooms_li = snnipet.find("i", class_="mdi-bed-king-outline").find_parent(
-                "li"
-            )
+            beedrooms_li = snnipet.find(
+                "i",
+                class_="mdi-bed-king-outline",
+            ).find_parent("li")
             beedrooms = beedrooms_li.find("strong").text
         except:
             return ""
 
         return beedrooms
 
-    def get_suite(self, snnipet: element.Tag = "") -> str:
+    def get_suite(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            suite_li = snnipet.find("i", class_="mdi-shower").find_parent("li")
+            suite_li = snnipet.find(
+                "i",
+                class_="mdi-shower",
+            ).find_parent("li")
             suite = suite_li.find("strong").text
         except:
             return ""
 
         return suite
 
-    def get_garage_slots(self, snnipet: element.Tag = "") -> str:
+    def get_garage_slots(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            gararge_slot_li = snnipet.find("i", class_="mdi-car").find_parent("li")
+            gararge_slot_li = snnipet.find(
+                "i",
+                class_="mdi-car",
+            ).find_parent("li")
             gararge_slot = gararge_slot_li.find("strong").text
         except:
             return ""
 
         return gararge_slot
 
-    def get_space(self, snnipet: element.Tag = "") -> str:
+    def get_space(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            space_slot_li = snnipet.find("i", class_="mdi-arrow-expand").find_parent(
-                "li"
-            )
+            space_slot_li = snnipet.find(
+                "i",
+                class_="mdi-arrow-expand",
+            ).find_parent("li")
             space_slot = space_slot_li.find("strong").text
         except:
             return ""
 
         return space_slot
 
-    def get_price(self, snnipet: element.Tag = "") -> str:
+    def get_price(
+        self,
+        snnipet: element.Tag = "",
+    ) -> str:
         try:
-            price = snnipet.find("meta", itemprop="lowprice").get("content")
+            price = snnipet.find(
+                "meta",
+                itemprop="lowprice",
+            ).get("content")
         except:
             return ""
 
@@ -361,25 +487,39 @@ class ImoveisSC:
 class ImoveisScTable:
     filepath = "imoveis.xlsx"
 
-    def __init__(self, filepath: str = ""):
+    def __init__(
+        self,
+        filepath: str = "",
+    ):
         if len(filepath) > 0:
             filepath = filepath
 
-    def load_file(self):
+    def load_file(
+        self,
+    ):
         try:
-            df_existing = pd.read_excel(self.filepath, engine="openpyxl")
+            df_existing = pd.read_excel(
+                self.filepath,
+                engine="openpyxl",
+            )
         except:
             return []
 
         imovel_items = []
-        for _, row in df_existing.iterrows():
+        for (
+            _,
+            row,
+        ) in df_existing.iterrows():
             row_dict = row.to_dict()
             item = ImovelInfo.table_deserializer(row_dict)
             imovel_items.append(item)
 
         return imovel_items
 
-    def create_index_dict(self, items: List[ImovelInfo] = None):
+    def create_index_dict(
+        self,
+        items: List[ImovelInfo] = None,
+    ):
         if items is None:
             return False
 
@@ -391,7 +531,10 @@ class ImoveisScTable:
 
         return item_dict
 
-    def update_file(self, items: List[ImovelInfo] = None):
+    def update_file(
+        self,
+        items: List[ImovelInfo] = None,
+    ):
         if items is None:
             return False
 
@@ -404,8 +547,14 @@ class ImoveisScTable:
 
         end_items_hash_table = {}
 
-        for index_site, item_site in site_items_hash_table.items():
-            item_table = table_items_hash_table.get(index_site, None)
+        for (
+            index_site,
+            item_site,
+        ) in site_items_hash_table.items():
+            item_table = table_items_hash_table.get(
+                index_site,
+                None,
+            )
 
             # new item
             if item_table is None:
@@ -414,7 +563,10 @@ class ImoveisScTable:
                 continue
 
             # item changed
-            if self.is_different(item_site, item_table):
+            if self.is_different(
+                item_site,
+                item_table,
+            ):
                 item_site.changed = True
                 end_items_hash_table[index_site] = item_site
                 site_items_keys.remove(index_site)
@@ -428,7 +580,10 @@ class ImoveisScTable:
         # skip set deleting if file does not exist
         if len(table_items) > 0:
             for remaining_item_key in table_items_keys:
-                item = table_items_hash_table.get(remaining_item_key, None)
+                item = table_items_hash_table.get(
+                    remaining_item_key,
+                    None,
+                )
                 if item is None:
                     continue
 
@@ -436,12 +591,19 @@ class ImoveisScTable:
                 end_items_hash_table[remaining_item_key] = item
 
         end_items = []
-        for _, item in end_items_hash_table.items():
+        for (
+            _,
+            item,
+        ) in end_items_hash_table.items():
             end_items.append(item)
 
         self.write_file(end_items)
 
-    def is_different(self, new: ImovelInfo = None, old: ImovelInfo = None):
+    def is_different(
+        self,
+        new: ImovelInfo = None,
+        old: ImovelInfo = None,
+    ):
         if new is None or old is None:
             return False
 
@@ -449,7 +611,10 @@ class ImoveisScTable:
 
         return diff
 
-    def write_file(self, items: List[ImovelInfo] = None):
+    def write_file(
+        self,
+        items: List[ImovelInfo] = None,
+    ):
         if items is None:
             return False
 
@@ -458,7 +623,11 @@ class ImoveisScTable:
             table_lines.append(item.table_serializer())
 
         df_new = pd.DataFrame(table_lines)
-        df_new.to_excel(self.filepath, index=False, engine="openpyxl")
+        df_new.to_excel(
+            self.filepath,
+            index=False,
+            engine="openpyxl",
+        )
 
 
 if __name__ == "__main__":
