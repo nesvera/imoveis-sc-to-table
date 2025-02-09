@@ -1,7 +1,5 @@
-# imoveis-sc-to-table
-Ferramenta para exportar anúncios do site Imóveis SC para uma tabela
-
-
+# Descrição
+Ferramenta para exportar anúncios do site Imóveis SC para uma tabela.
 
 
 # Instalação
@@ -31,3 +29,8 @@ https://www.imoveis-sc.com.br/blumenau/comprar/apartamento/agua-verde_boa-vista_
 ```
 python3 imoveis_sc_crawler.py
 ```
+
+9. Abra o arquivo ``imoveis.xlsx ``
+10. Você pode marcar as colunas ``changed``, ``viewed``, ``disliked`` e ``deleted`` com ``x```
+11. Salve o arquivo quando finalizar
+12. Você pode executar o script do passo 5 quantas vezes quiser para atualizar a tabela com dados novos do site
