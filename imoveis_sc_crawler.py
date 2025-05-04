@@ -14,7 +14,7 @@ import time
 import re
 import pandas as pd
 
-url = "https://www.imoveis-sc.com.br/blumenau/comprar/apartamento/agua-verde_boa-vista_bom-retiro_centro_itoupava-seca_jardim-blumenau_ponta-aguda_ribeirao-fresco_velha_victor-konder_vila-formosa_vila-nova/quartos/2?ordenacao=menor-preco&valor=300000-500000&area=49-&suites=1"
+url = "https://www.imoveis-sc.com.br/blumenau/comprar/apartamento"
 
 
 class ImovelInfo:
@@ -203,7 +203,7 @@ class ImoveisSC:
 
             imoveis_list += tmp_imoveis_list
             page_count += 1
-            time.sleep(0.3)
+            time.sleep(0.01)
 
         return imoveis_list
 
@@ -240,14 +240,21 @@ class ImoveisSC:
 
         url = self.url
         if page > 0:
-            url += f"&page={page}"
+            if "?" in url:
+                url += f"&page={page}"
+            else:
+                url += f"?page={page}"
 
-        response = self.session.get(
-            url,
-            headers=self.headers,
-        )
+        try:
+            response = self.session.get(url, headers=self.headers, timeout=5)
+        except Exception as e:
+            print("Failed to get page: ", url)
+            print("Error: ", e)
+            return None
 
         if response.status_code != 200:
+            print("Failed to get page: ", url)
+            print("Status code: ", response.status_code)
             return None
 
         return response.text
@@ -256,10 +263,15 @@ class ImoveisSC:
         self,
         page: str = "",
     ) -> List[ImovelInfo]:
-        soup = BeautifulSoup(
-            page,
-            "html.parser",
-        )
+        try:
+            soup = BeautifulSoup(
+                page,
+                "html.parser",
+            )
+        except Exception as e:
+            print("Error: ", e)
+            return []
+
         imoveis_soup = soup.find_all(
             "div",
             class_="imovel-data",
